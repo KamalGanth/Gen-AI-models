@@ -1,13 +1,13 @@
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain_google_genai import ChatGoogleGenerativeAI
 import logging
 from gtts import gTTS
-import os
+
 
 # Backend functions
 def load_pdf(file_path):
@@ -25,7 +25,11 @@ def chunking(page_texts):
     return docs, num_chunks
 
 def vectordb(docs):
-    db = Chroma.from_documents(docs, OpenAIEmbeddings(api_key="..."))
+    # Initialize the HuggingFaceEmbeddings
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    
+    # Create Chroma vector database using the HuggingFace embeddings
+    db = Chroma.from_documents(docs, embeddings)
     return db
 
 def queryretriver(question, db):
@@ -70,9 +74,9 @@ if uploaded_file is not None:
         st.success("PDF loaded and processed successfully!")
 
         # Display PDF info
-        st.write(f"Number of Pages: **{num_pages}**")
-        st.write(f"Total Number of Words: **{total_words}**")
-        st.write(f"Number of Chunks: **{num_chunks}**")
+        st.write(f"Number of Pages: *{num_pages}*")
+        st.write(f"Total Number of Words: *{total_words}*")
+        st.write(f"Number of Chunks: *{num_chunks}*")
 
         # Custom CSS for underlined text
         st.markdown("""
@@ -110,20 +114,10 @@ if uploaded_file is not None:
                     st.subheader("Generated Answer")
                     st.write(final_answer)
 
-                    # Create a button to copy the final_answer to the clipboard
                     st.code(final_answer, language="text")
-                    
-                    
-                    # Add a button for copying text
-                    
+                                        
                     if final_answer:
                         tts = gTTS(final_answer)
                         tts.save("final_answer.mp3")
                         
-                        # Display the audio player
                         st.audio("final_answer.mp3")
-
-                
-
-# Run the Streamlit app
-# streamlit run your_app.py
